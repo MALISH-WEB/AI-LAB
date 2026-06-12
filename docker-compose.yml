@@ -1,0 +1,49 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:14
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_lab
+      POSTGRES_USER: ai_lab
+      POSTGRES_PASSWORD: ai_lab
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ai_lab
+      DB_USER: ai_lab
+      DB_PASSWORD: ai_lab
+      JWT_ACCESS_SECRET: access-secret
+      JWT_REFRESH_SECRET: refresh-secret
+      FRONTEND_URL: http://localhost:3000
+      OPENAI_MODEL: gpt-4o-mini
+    ports:
+      - '4000:4000'
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+    ports:
+      - '3000:3000'
+
+volumes:
+  postgres_data:
